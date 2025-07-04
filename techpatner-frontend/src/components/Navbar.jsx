@@ -1,11 +1,11 @@
 import React from 'react';
 import { LogOut, User } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
 
 const Navbar = ({ userEmail = 'admin@company.com', userName = 'Admin User' }) => {
+  const navigate=useNavigate()
   const handleLogout = () => {
-    console.log('Logging out...');
-    // Add logout logic here
-    // For example: redirect to login page, clear tokens, etc.
+   navigate("/login")
   };
 
   return (

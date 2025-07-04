@@ -1,19 +1,20 @@
-import React, { useState } from 'react';
-import { Eye, EyeOff, Shield, Mail, Lock } from 'lucide-react';
+import React, { useState } from "react";
+import { Eye, EyeOff, Shield, Mail, Lock } from "lucide-react";
+import { useNavigate } from "react-router-dom";
 
 export default function AdminLoginPage() {
   const [showPassword, setShowPassword] = useState(false);
-  const [email, setEmail] = useState('admin@company.com');
-  const [password, setPassword] = useState('');
-
+  const [email, setEmail] = useState("admin@company.com");
+  const [password, setPassword] = useState("");
+  const navigate = useNavigate();
   const handleSubmit = () => {
-    // Handle login logic here
-    console.log('Login attempt:', { email, password });
+    navigate("/");
+    console.log("Login attempt:", { email, password });
   };
 
   const fillDemoCredentials = () => {
-    setEmail('admin@company.com');
-    setPassword('admin123');
+    setEmail("admin@company.com");
+    setPassword("admin123");
   };
 
   return (
@@ -26,7 +27,9 @@ export default function AdminLoginPage() {
               <Shield className="w-8 h-8 text-white" />
             </div>
             <h1 className="text-2xl font-bold text-white mb-2">Admin Login</h1>
-            <p className="text-gray-300 text-sm">Sign in to access the admin panel</p>
+            <p className="text-gray-300 text-sm">
+              Sign in to access the admin panel
+            </p>
           </div>
 
           {/* Form */}
@@ -57,7 +60,7 @@ export default function AdminLoginPage() {
               <div className="relative">
                 <Lock className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-5 h-5" />
                 <input
-                  type={showPassword ? 'text' : 'password'}
+                  type={showPassword ? "text" : "password"}
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
                   className="w-full bg-gray-700 bg-opacity-50 text-white placeholder-gray-400 border border-gray-600 rounded-lg pl-10 pr-12 py-3 focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent transition-all duration-200"
@@ -69,7 +72,11 @@ export default function AdminLoginPage() {
                   onClick={() => setShowPassword(!showPassword)}
                   className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-gray-300 transition-colors"
                 >
-                  {showPassword ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
+                  {showPassword ? (
+                    <EyeOff className="w-5 h-5" />
+                  ) : (
+                    <Eye className="w-5 h-5" />
+                  )}
                 </button>
               </div>
             </div>
@@ -91,7 +98,9 @@ export default function AdminLoginPage() {
                 className="w-full bg-gray-700 bg-opacity-50 text-gray-300 font-medium py-3 px-6 rounded-lg border border-gray-600 hover:bg-gray-600 hover:bg-opacity-50 focus:outline-none focus:ring-2 focus:ring-gray-500 transition-all duration-200"
               >
                 <div className="text-center">
-                  <div className="text-xs text-gray-400 mb-1">Demo credentials:</div>
+                  <div className="text-xs text-gray-400 mb-1">
+                    Demo credentials:
+                  </div>
                   <div className="text-sm">admin@company.com / admin123</div>
                 </div>
               </button>
