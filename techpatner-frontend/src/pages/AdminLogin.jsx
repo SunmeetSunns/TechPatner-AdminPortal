@@ -6,15 +6,22 @@ export default function AdminLoginPage() {
   const [showPassword, setShowPassword] = useState(false);
   const [email, setEmail] = useState("admin@company.com");
   const [password, setPassword] = useState("");
+  const [error, setError] = useState("");
   const navigate = useNavigate();
   const handleSubmit = () => {
+    if(password!=="admin123") {
+      setError("Password is incorrect!")
+      return;
+    }
+    localStorage.setItem("password",password);
+
     navigate("/");
     console.log("Login attempt:", { email, password });
   };
 
   const fillDemoCredentials = () => {
     setEmail("admin@company.com");
-    setPassword("admin123");
+    // setPassword("");
   };
 
   return (
@@ -78,6 +85,7 @@ export default function AdminLoginPage() {
                     <Eye className="w-5 h-5" />
                   )}
                 </button>
+               <span className="text-red-500">{error}</span>
               </div>
             </div>
 

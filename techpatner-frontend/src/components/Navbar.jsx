@@ -6,6 +6,7 @@ const Navbar = ({ userEmail = 'admin@company.com', userName = 'Admin User' }) =>
   const navigate=useNavigate()
   const handleLogout = () => {
    navigate("/login")
+   localStorage.removeItem("password")
   };
 
   return (
