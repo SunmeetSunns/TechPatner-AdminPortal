@@ -55,7 +55,7 @@ const Dashboard = () => {
   ];
 
   return (
-    <div className="p-6 ml-64 bg-gray-900 min-h-screen">
+    <div className="p-6 md:ml-64 bg-gray-900 min-h-screen">
       {/* Page Header */}
       <div className="mb-6">
         <h2 className="text-3xl font-bold mb-2 text-white">Dashboard</h2>

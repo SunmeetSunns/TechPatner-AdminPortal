@@ -10,10 +10,16 @@ const Sidebar = () => {
     { id: "dashboard", label: "Dashboard", icon: LayoutDashboard, route: "/" },
     { id: "users", label: "Users", icon: Users, route: "/user" },
   ];
+  useEffect(() => {
+    const currentPath = window.location.pathname;
+    const currentItem = sidebarItems.find(item => item.route === currentPath);
+    if (currentItem) {
+      setActiveTab(currentItem.id);
+    }
+  }, []);
 
   // Close mobile sidebar when clicking on a menu item
   const handleTabClick = (tab) => {
-    console.log("first",tab)
     setActiveTab(tab.id);
     navigate(tab.route);
     if (window.innerWidth <= 768) {

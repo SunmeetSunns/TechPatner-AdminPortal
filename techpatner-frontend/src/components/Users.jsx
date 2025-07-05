@@ -1,11 +1,15 @@
 import React, { useState } from 'react';
 import { Search, Filter, Eye, Edit, Calendar } from 'lucide-react';
+import EditUserForm from './EditUserForm';
 
 const UsersComponent = () => {
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedCategory, setSelectedCategory] = useState('All Categories');
   const [selectedStatus, setSelectedStatus] = useState('All Statuses');
   const [selectedPlan, setSelectedPlan] = useState('All Plans');
+  const [currentView, setCurrentView] = useState('list');
+  const [selectedUser, setSelectedUser] = useState(null);
+
 
   // Sample user data
   const users = [
@@ -13,7 +17,7 @@ const UsersComponent = () => {
       id: 1,
       name: 'John Doe',
       email: 'john.doe@email.com',
-      category: 'Developer',
+      category: 'Student',
       plan: 'Premium',
       status: 'Active',
       joinDate: '1/15/2024'
@@ -22,7 +26,7 @@ const UsersComponent = () => {
       id: 2,
       name: 'Sarah Wilson',
       email: 'sarah.wilson@email.com',
-      category: 'Designer',
+      category: 'Agency',
       plan: 'Enterprise',
       status: 'Active',
       joinDate: '2/20/2024'
@@ -31,7 +35,7 @@ const UsersComponent = () => {
       id: 3,
       name: 'Mike Johnson',
       email: 'mike.johnson@email.com',
-      category: 'Manager',
+      category: 'Professional',
       plan: 'Basic',
       status: 'Inactive',
       joinDate: '3/10/2024'
@@ -40,7 +44,7 @@ const UsersComponent = () => {
       id: 4,
       name: 'Emily Davis',
       email: 'emily.davis@email.com',
-      category: 'Analyst',
+      category: 'Student',
       plan: 'Premium',
       status: 'Active',
       joinDate: '3/25/2024'
@@ -49,14 +53,14 @@ const UsersComponent = () => {
       id: 5,
       name: 'Robert Brown',
       email: 'robert.brown@email.com',
-      category: 'Developer',
+      category: 'Student',
       plan: 'Enterprise',
       status: 'Active',
       joinDate: '4/05/2024'
     }
   ];
 
-  const categories = ['All Categories', 'Developer', 'Designer', 'Manager', 'Analyst'];
+  const categories = ['All Categories', 'Student', 'Agency', 'Professional'];
   const statuses = ['All Statuses', 'Active', 'Inactive'];
   const plans = ['All Plans', 'Basic', 'Premium', 'Enterprise'];
 
@@ -95,12 +99,34 @@ const UsersComponent = () => {
     }
   };
 
+  const handleSaveUser = (updatedUser) => {
+    console.log('Saving user:', updatedUser);
+    // Here you would typically make an API call to save the user
+    // After successful save, go back to list view
+    setCurrentView('list');
+    setSelectedUser(null);
+  };
+  const handleCancelEdit = () => {
+    setCurrentView('list');
+    setSelectedUser(null);
+  };
+
+  if (currentView === 'edit') {
+    return (
+      <EditUserForm
+        user={selectedUser}
+        onSave={handleSaveUser}
+        onCancel={handleCancelEdit}
+      />
+    );
+  }
   const handleViewUser = (userId) => {
     console.log('View user:', userId);
   };
 
-  const handleEditUser = (userId) => {
-    console.log('Edit user:', userId);
+  const handleEditUser = (user) => {
+    setSelectedUser(user);
+    setCurrentView('edit');
   };
 
   return (
@@ -252,7 +278,7 @@ const UsersComponent = () => {
                         <Eye className="w-4 h-4" />
                       </button>
                       <button
-                        onClick={() => handleEditUser(user.id)}
+                        onClick={() => handleEditUser(user)}
                         className="p-2 text-gray-400 hover:text-green-400 hover:bg-green-500 hover:bg-opacity-20 rounded-lg transition-colors"
                         title="Edit User"
                       >
