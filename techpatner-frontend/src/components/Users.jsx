@@ -120,6 +120,7 @@ const UsersComponent = () => {
       />
     );
   }
+  
   const handleViewUser = (userId) => {
     console.log('View user:', userId);
   };
@@ -271,7 +272,8 @@ const UsersComponent = () => {
                   <td className="px-6 py-4">
                     <div className="flex items-center gap-2">
                       <button
-                        onClick={() => handleViewUser(user.id)}
+                        // onClick={() => handleViewUser(user.id)}
+                        onClick={() => handleEditUser(user)}
                         className="p-2 text-gray-400 hover:text-blue-400 hover:bg-blue-500 hover:bg-opacity-20 rounded-lg transition-colors"
                         title="View User"
                       >
