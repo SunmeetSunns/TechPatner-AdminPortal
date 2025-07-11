@@ -1,93 +1,93 @@
+import React, { useState, useEffect } from 'react';
+import { useForm } from 'react-hook-form';
+import { ArrowLeft, Save, X, User, Mail, Calendar, Tag, Phone, Globe, Link, Upload } from 'lucide-react';
+import { createValidationRules } from '../validator/editUserValidator';
 
-import React, { useState } from 'react';
-import { ArrowLeft, Save, X, User, Mail, Calendar, Tag, CreditCard, Activity } from 'lucide-react';
+
 
 const EditUserForm = ({ user, onSave, onCancel }) => {
-  const [formData, setFormData] = useState({
-    name: user?.name || '',
-    email: user?.email || '',
-    category: user?.category || 'Student',
-    plan: user?.plan || 'Basic',
-    status: user?.status || 'Active',
-    joinDate: user?.joinDate || ''
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [apiError, setApiError] = useState('');
+
+  console.log("first",user.id)
+  const categories = ['student', 'agency', 'professional'];
+  const countryCodes = ['+1', '+44', '+91', '+86', '+33', '+49', '+81', '+61'];
+
+  const {
+    register,
+    handleSubmit,
+    formState: { errors, isDirty },
+    reset,
+    watch,
+    setValue
+  } = useForm({
+    defaultValues: {
+      name: '',
+      email: '',
+      mobile: '',
+      country_code: '+91',
+      category: 'professional',
+      portfolioLink: '',
+      isVerified: false,
+      havePreference: false,
+      planPurchased: false
+    },
+    mode: 'onChange'
   });
 
-  const [errors, setErrors] = useState({});
-
-  const categories = ['Student', 'Agency', 'Professional'];
-  const plans = ['Basic', 'Premium', 'Enterprise'];
-  const statuses = ['Active', 'Inactive'];
-
-  const handleInputChange = (e) => {
-    const { name, value } = e.target;
-    setFormData(prev => ({
-      ...prev,
-      [name]: value
-    }));
-    
-    // Clear error for this field when user starts typing
-    if (errors[name]) {
-      setErrors(prev => ({
-        ...prev,
-        [name]: ''
-      }));
-    }
-  };
-
-  const validateForm = () => {
-    const newErrors = {};
-
-    if (!formData.name.trim()) {
-      newErrors.name = 'Name is required';
-    }
-
-    if (!formData.email.trim()) {
-      newErrors.email = 'Email is required';
-    } else if (!/\S+@\S+\.\S+/.test(formData.email)) {
-      newErrors.email = 'Please enter a valid email address';
-    }
-
-    if (!formData.joinDate) {
-      newErrors.joinDate = 'Join date is required';
-    }
-
-    setErrors(newErrors);
-    return Object.keys(newErrors).length === 0;
-  };
-
-  const handleSubmit = (e) => {
-    e.preventDefault();
-    
-    if (validateForm()) {
-      onSave({
-        ...user,
-        ...formData
+  // Update form when user prop changes
+  useEffect(() => {
+    if (user) {
+      reset({
+        name: user.name || '',
+        email: user.email || '',
+        mobile: user.mobile || '',
+        country_code: user.country_code || '+91',
+        category: user.category || 'professional',
+        portfolioLink: user.portfolioLink || '',
+        isVerified: user.isVerified || false,
+        havePreference: user.havePreference || false,
+        planPurchased: user.planPurchased || false
       });
+    }
+  }, [user, reset]);
+
+  const validationRules = createValidationRules();
+
+  const onSubmit = async (data) => {
+    setIsSubmitting(true);
+    setApiError('');
+
+    try {
+      const response = await fetch(`${import.meta.env.VITE_API_URL}/user/${user.id}/update`, {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(data)
+      });
+
+      const result = await response.json();
+
+      if (result.success) {
+        onSave(result.data.user);
+      } else {
+        setApiError(result.message || 'Failed to update user');
+      }
+    } catch (error) {
+      setApiError('Network error. Please try again.');
+      console.error('Error updating user:', error);
+    } finally {
+      setIsSubmitting(false);
     }
   };
 
   const getStatusColor = (status) => {
-    switch (status) {
-      case 'Active':
-        return 'text-white-400 bg-green-500 bg-opacity-20';
-      case 'Inactive':
-        return 'text-red-400 bg-red-500 bg-opacity-20';
-      default:
-        return 'text-gray-400 bg-gray-500 bg-opacity-20';
-    }
+    return status ? 'text-white-400 bg-green-500 bg-opacity-20' : 'text-white-400 bg-red-500 bg-opacity-20';
   };
 
-  const getPlanColor = (plan) => {
-    switch (plan) {
-      case 'Basic':
-        return 'text-white-400 bg-gray-500 bg-opacity-20';
-      case 'Premium':
-        return 'text-white-400 bg-blue-500 bg-opacity-20';
-      case 'Enterprise':
-        return 'text-white-400 bg-purple-500 bg-opacity-20';
-      default:
-        return 'text-white-400 bg-gray-500 bg-opacity-20';
-    }
+  const getPlanColor = (hasPlan) => {
+    return hasPlan ? 'text-white-400 bg-blue-500 bg-opacity-20' : 'text-white-400 bg-gray-500 bg-opacity-20';
   };
 
   return (
@@ -107,21 +107,36 @@ const EditUserForm = ({ user, onSave, onCancel }) => {
         <p className="text-gray-400">Update user information and settings</p>
       </div>
 
+      {/* API Error Alert */}
+      {apiError && (
+        <div className="bg-red-500 bg-opacity-20 border border-red-500 text-red-400 px-4 py-3 rounded-lg mb-6">
+          {apiError}
+        </div>
+      )}
+
       {/* User Info Card */}
       <div className="bg-gray-800 rounded-xl p-6 border border-gray-700 mb-6">
         <div className="flex items-center gap-4">
           <div className="w-16 h-16 bg-purple-600 rounded-full flex items-center justify-center">
-            <User className="w-8 h-8 text-white" />
+            {user?.profilePic?.url ? (
+              <img 
+                src={user.profilePic.url} 
+                alt={user.name} 
+                className="w-full h-full rounded-full object-cover"
+              />
+            ) : (
+              <User className="w-8 h-8 text-white" />
+            )}
           </div>
           <div>
             <h3 className="text-xl font-semibold text-white">{user?.name}</h3>
             <p className="text-gray-400">{user?.email}</p>
             <div className="flex items-center gap-4 mt-2">
-              <span className={`px-3 py-1 rounded-full text-xs font-medium ${getStatusColor(user?.status)}`}>
-                {user?.status}
+              <span className={`px-3 py-1 rounded-full text-xs font-medium ${getStatusColor(user?.isVerified)}`}>
+                {user?.isVerified ? 'Verified' : 'Not Verified'}
               </span>
-              <span className={`px-3 py-1 rounded-full text-xs font-medium ${getPlanColor(user?.plan)}`}>
-                {user?.plan}
+              <span className={`px-3 py-1 rounded-full text-xs font-medium ${getPlanColor(user?.planPurchased)}`}>
+                {user?.planPurchased ? 'Premium' : 'Free'}
               </span>
             </div>
           </div>
@@ -146,16 +161,14 @@ const EditUserForm = ({ user, onSave, onCancel }) => {
                 <User className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
                 <input
                   type="text"
-                  name="name"
-                  value={formData.name}
-                  onChange={handleInputChange}
+                  {...register('name', validationRules.name)}
                   className={`w-full bg-gray-700 bg-opacity-50 text-white placeholder-gray-400 border rounded-lg pl-10 pr-4 py-3 focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent ${
                     errors.name ? 'border-red-500' : 'border-gray-600'
                   }`}
                   placeholder="Enter full name"
                 />
               </div>
-              {errors.name && <p className="text-red-400 text-sm mt-1">{errors.name}</p>}
+              {errors.name && <p className="text-red-400 text-sm mt-1">{errors.name.message}</p>}
             </div>
 
             {/* Email Field */}
@@ -167,102 +180,156 @@ const EditUserForm = ({ user, onSave, onCancel }) => {
                 <Mail className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
                 <input
                   type="email"
-                  name="email"
-                  value={formData.email}
-                  onChange={handleInputChange}
+                  {...register('email', validationRules.email)}
                   className={`w-full bg-gray-700 bg-opacity-50 text-white placeholder-gray-400 border rounded-lg pl-10 pr-4 py-3 focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent ${
                     errors.email ? 'border-red-500' : 'border-gray-600'
                   }`}
                   placeholder="Enter email address"
                 />
               </div>
-              {errors.email && <p className="text-red-400 text-sm mt-1">{errors.email}</p>}
+              {errors.email && <p className="text-red-400 text-sm mt-1">{errors.email.message}</p>}
+            </div>
+
+            {/* Country Code Field */}
+            <div>
+              <label className="block text-sm font-medium text-gray-300 mb-2">
+                Country Code *
+              </label>
+              <div className="relative">
+                <Globe className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
+                <select
+                  {...register('country_code', validationRules.country_code)}
+                  className={`w-full bg-gray-700 bg-opacity-50 text-white border rounded-lg pl-10 pr-4 py-3 focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent ${
+                    errors.country_code ? 'border-red-500' : 'border-gray-600'
+                  }`}
+                >
+                  {countryCodes.map(code => (
+                    <option key={code} value={code} className="bg-gray-700">
+                      {code}
+                    </option>
+                  ))}
+                </select>
+              </div>
+              {errors.country_code && <p className="text-red-400 text-sm mt-1">{errors.country_code.message}</p>}
+            </div>
+
+            {/* Mobile Field */}
+            <div>
+              <label className="block text-sm font-medium text-gray-300 mb-2">
+                Mobile Number *
+              </label>
+              <div className="relative">
+                <Phone className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
+                <input
+                  type="tel"
+                  {...register('mobile', validationRules.mobile)}
+                  className={`w-full bg-gray-700 bg-opacity-50 text-white placeholder-gray-400 border rounded-lg pl-10 pr-4 py-3 focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent ${
+                    errors.mobile ? 'border-red-500' : 'border-gray-600'
+                  }`}
+                  placeholder="Enter mobile number"
+                />
+              </div>
+              {errors.mobile && <p className="text-red-400 text-sm mt-1">{errors.mobile.message}</p>}
             </div>
 
             {/* Category Field */}
             <div>
               <label className="block text-sm font-medium text-gray-300 mb-2">
-                Category
+                Category *
               </label>
               <div className="relative">
                 <Tag className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
                 <select
-                  name="category"
-                  value={formData.category}
-                  onChange={handleInputChange}
-                  className="w-full bg-gray-700 bg-opacity-50 text-white border border-gray-600 rounded-lg pl-10 pr-4 py-3 focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent"
+                  {...register('category', validationRules.category)}
+                  className={`w-full bg-gray-700 bg-opacity-50 text-white border rounded-lg pl-10 pr-4 py-3 focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent ${
+                    errors.category ? 'border-red-500' : 'border-gray-600'
+                  }`}
                 >
                   {categories.map(category => (
                     <option key={category} value={category} className="bg-gray-700">
-                      {category}
+                      {category.charAt(0).toUpperCase() + category.slice(1)}
                     </option>
                   ))}
                 </select>
               </div>
+              {errors.category && <p className="text-red-400 text-sm mt-1">{errors.category.message}</p>}
             </div>
 
-            {/* Plan Field */}
+            {/* Portfolio Link Field */}
             <div>
               <label className="block text-sm font-medium text-gray-300 mb-2">
-                Plan
+                Portfolio Link
               </label>
               <div className="relative">
-                <CreditCard className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
-                <select
-                  name="plan"
-                  value={formData.plan}
-                  onChange={handleInputChange}
-                  className="w-full bg-gray-700 bg-opacity-50 text-white border border-gray-600 rounded-lg pl-10 pr-4 py-3 focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent"
-                >
-                  {plans.map(plan => (
-                    <option key={plan} value={plan} className="bg-gray-700">
-                      {plan}
-                    </option>
-                  ))}
-                </select>
-              </div>
-            </div>
-
-            {/* Status Field */}
-            <div>
-              <label className="block text-sm font-medium text-gray-300 mb-2">
-                Status
-              </label>
-              <div className="relative">
-                <Activity className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
-                <select
-                  name="status"
-                  value={formData.status}
-                  onChange={handleInputChange}
-                  className="w-full bg-gray-700 bg-opacity-50 text-white border border-gray-600 rounded-lg pl-10 pr-4 py-3 focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent"
-                >
-                  {statuses.map(status => (
-                    <option key={status} value={status} className="bg-gray-700">
-                      {status}
-                    </option>
-                  ))}
-                </select>
-              </div>
-            </div>
-
-            {/* Join Date Field */}
-            <div>
-              <label className="block text-sm font-medium text-gray-300 mb-2">
-                Join Date *
-              </label>
-              <div className="relative">
-                <Calendar className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
+                <Link className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
                 <input
-                  type="date"
-                  name="joinDate"
-                  value={formData.joinDate}
-                  onChange={handleInputChange}
+                  type="url"
+                  {...register('portfolioLink', validationRules.portfolioLink)}
                   className={`w-full bg-gray-700 bg-opacity-50 text-white placeholder-gray-400 border rounded-lg pl-10 pr-4 py-3 focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent ${
-                    errors.joinDate ? 'border-red-500' : 'border-gray-600'
+                    errors.portfolioLink ? 'border-red-500' : 'border-gray-600'
                   }`}
+                  placeholder="https://your-portfolio.com"
                 />
               </div>
-              {errors.joinDate && <p className="text-red-400 text-sm mt-1">{errors.joinDate}</p>}
+              {errors.portfolioLink && <p className="text-red-400 text-sm mt-1">{errors.portfolioLink.message}</p>}
+            </div>
+          </div>
+        </div>
+
+        {/* User Status Settings */}
+        <div className="bg-gray-800 rounded-xl p-6 border border-gray-700">
+          <h3 className="text-xl font-semibold mb-6 flex items-center gap-2">
+            <Tag className="w-5 h-5" />
+            User Status & Preferences
+          </h3>
+
+          <div className="space-y-4">
+            {/* Verified Status */}
+            <div className="flex items-center justify-between">
+              <div>
+                <label className="text-sm font-medium text-gray-300">Email Verified</label>
+                <p className="text-gray-400 text-xs">Whether the user's email is verified</p>
+              </div>
+              <label className="relative inline-flex items-center cursor-pointer">
+                <input
+                  type="checkbox"
+                  {...register('isVerified')}
+                  className="sr-only peer"
+                />
+                <div className="w-11 h-6 bg-gray-600 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-purple-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-purple-600"></div>
+              </label>
+            </div>
+
+            {/* Have Preference */}
+            <div className="flex items-center justify-between">
+              <div>
+                <label className="text-sm font-medium text-gray-300">Has Preferences</label>
+                <p className="text-gray-400 text-xs">Whether the user has set their preferences</p>
+              </div>
+              <label className="relative inline-flex items-center cursor-pointer">
+                <input
+                  type="checkbox"
+                  {...register('havePreference')}
+                  className="sr-only peer"
+                />
+                <div className="w-11 h-6 bg-gray-600 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-purple-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-purple-600"></div>
+              </label>
+            </div>
+
+            {/* Plan Purchased */}
+            <div className="flex items-center justify-between">
+              <div>
+                <label className="text-sm font-medium text-gray-300">Premium Plan</label>
+                <p className="text-gray-400 text-xs">Whether the user has purchased a premium plan</p>
+              </div>
+              <label className="relative inline-flex items-center cursor-pointer">
+                <input
+                  type="checkbox"
+                  {...register('planPurchased')}
+                  className="sr-only peer"
+                />
+                <div className="w-11 h-6 bg-gray-600 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-purple-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-purple-600"></div>
+              </label>
             </div>
           </div>
         </div>
@@ -271,16 +338,22 @@ const EditUserForm = ({ user, onSave, onCancel }) => {
         <div className="flex items-center gap-4">
           <button
             type="button"
-            onClick={handleSubmit}
-            className="flex items-center gap-2 bg-purple-600 hover:bg-purple-700 text-white px-6 py-3 rounded-lg transition-colors font-medium"
+            onClick={handleSubmit(onSubmit)}
+            disabled={isSubmitting || !isDirty}
+            className={`flex items-center gap-2 px-6 py-3 rounded-lg transition-colors font-medium ${
+              isSubmitting || !isDirty
+                ? 'bg-gray-600 text-gray-400 cursor-not-allowed'
+                : 'bg-purple-600 hover:bg-purple-700 text-white'
+            }`}
           >
             <Save className="w-4 h-4" />
-            Save Changes
+            {isSubmitting ? 'Saving...' : 'Save Changes'}
           </button>
           <button
             type="button"
             onClick={onCancel}
-            className="flex items-center gap-2 bg-gray-600 hover:bg-gray-700 text-white px-6 py-3 rounded-lg transition-colors font-medium"
+            disabled={isSubmitting}
+            className="flex items-center gap-2 bg-gray-600 hover:bg-gray-700 text-white px-6 py-3 rounded-lg transition-colors font-medium disabled:opacity-50"
           >
             <X className="w-4 h-4" />
             Cancel
