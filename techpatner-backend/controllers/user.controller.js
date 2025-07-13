@@ -1,6 +1,5 @@
 const asyncHandler = require("../utils/asyncHandler");
 const User = require("../models/user");
-
 module.exports.listUser = asyncHandler(async (req, res, next) => {
   const page = parseInt(req.query.page) || 1;
   const limit = parseInt(req.query.limit) || 10;
@@ -10,8 +9,7 @@ module.exports.listUser = asyncHandler(async (req, res, next) => {
   if (req.query.category) filter.category = req.query.category;
   if (req.query.isVerified !== undefined)
     filter.isVerified = req.query.isVerified === "true";
-  if (req.query.planPurchased !== undefined)
-    filter.planPurchased = req.query.planPurchased === "true";
+  if (req.query.plan) filter.plan = req.query.plan;
 
   if (req.query.search) {
     const searchRegex = new RegExp(req.query.search, "i");
@@ -62,34 +60,6 @@ module.exports.updateUser = asyncHandler(async (req, res, next) => {
       success: false,
       message: "User not found",
     });
-  }
-
-  // Check for duplicate email (if email is being updated)
-  if (updates.email && updates.email !== existingUser.email) {
-    const emailExists = await User.findOne({
-      email: updates.email,
-      _id: { $ne: id },
-    });
-    if (emailExists) {
-      return res.status(400).json({
-        success: false,
-        message: "Email already exists",
-      });
-    }
-  }
-
-  // Check for duplicate mobile (if mobile is being updated)
-  if (updates.mobile && updates.mobile !== existingUser.mobile) {
-    const mobileExists = await User.findOne({
-      mobile: updates.mobile,
-      _id: { $ne: id },
-    });
-    if (mobileExists) {
-      return res.status(400).json({
-        success: false,
-        message: "Mobile number already exists",
-      });
-    }
   }
 
   // Update user
