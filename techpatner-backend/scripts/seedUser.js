@@ -6,7 +6,7 @@ const users = [
   {
     email: "john.doe@example.com",
     name: "John Doe",
-    password: "$2b$10$abcxyz123",
+    password: "abc12300",
     unhashedPassword: "john123",
     isVerified: true,
     category: "Professional",
