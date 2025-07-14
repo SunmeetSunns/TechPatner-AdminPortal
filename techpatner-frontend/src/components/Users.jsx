@@ -22,15 +22,24 @@ const UsersComponent = () => {
     hasPrevPage: false
   });
 
-
   const [currentPage, setCurrentPage] = useState(1);
   const [itemsPerPage, setItemsPerPage] = useState(10);
 
-  const categories = ["All Categories", "professional", "student", "freelancer", "business"];
+  const categories = ["All Categories", "Student", "Professional", "Agency"];
   const statuses = ["All Statuses", "Active", "Inactive"];
-  const plans = ["All Plans", "Basic", "Premium", "Enterprise"];
+  
+  const plansByCategory = {
+    "Student": ["Starter", "Explorer", "Growth", "Achiever"],
+    "Professional": ["Sasic", "Plus", "Pro", "Elite"],
+    "Agency": ["Solo", "Team", "Business", "Enterprise"]
+  };
 
-
+  const getAvailablePlans = () => {
+    if (selectedCategory === "All Categories") {
+      return ["All Plans", ...Object.values(plansByCategory).flat()];
+    }
+    return ["All Plans", ...plansByCategory[selectedCategory]];
+  };
 
   const useDebounce = (value, delay) => {
     const [debouncedValue, setDebouncedValue] = useState(value);
@@ -50,7 +59,6 @@ const UsersComponent = () => {
 
   const debouncedSearchTerm = useDebounce(searchTerm, 500);
 
-
   const fetchUsers = useCallback(async () => {
     setLoading(true);
     setError(null);
@@ -61,7 +69,6 @@ const UsersComponent = () => {
         limit: itemsPerPage.toString(),
       });
 
-
       if (debouncedSearchTerm.trim()) {
         queryParams.append('search', debouncedSearchTerm.trim());
       }
@@ -71,14 +78,12 @@ const UsersComponent = () => {
         queryParams.append('category', selectedCategory);
       }
 
-
       if (selectedStatus !== "All Statuses") {
         queryParams.append('isVerified', selectedStatus === "Active" ? "true" : "false");
       }
 
-
       if (selectedPlan !== "All Plans") {
-        queryParams.append('planPurchased', selectedPlan !== "Basic" ? "true" : "false");
+        queryParams.append('plan', selectedPlan);
       }
 
       const response = await fetch(`${import.meta.env.VITE_API_URL}/user?${queryParams}`);
@@ -90,13 +95,12 @@ const UsersComponent = () => {
       const data = await response.json();
 
       if (data.success) {
-
         const transformedUsers = data.data.users.map(user => ({
           id: user._id,
           name: user.name || 'N/A',
           email: user.email,
           category: user.category,
-          plan: user.planPurchased ? 'Premium' : 'Basic',
+          plan: user.plan || 'N/A', // Use the plan field directly from API
           status: user.isVerified ? 'Active' : 'Inactive',
           joinDate: user.createdAt ? new Date(user.createdAt).toLocaleDateString() : 'N/A',
           mobile: user.mobile,
@@ -121,11 +125,14 @@ const UsersComponent = () => {
     }
   }, [currentPage, itemsPerPage, debouncedSearchTerm, selectedCategory, selectedStatus, selectedPlan]);
 
-
   useEffect(() => {
     fetchUsers();
   }, [fetchUsers]);
 
+  // Reset plan filter when category changes
+  useEffect(() => {
+    setSelectedPlan("All Plans");
+  }, [selectedCategory]);
 
   useEffect(() => {
     if (currentPage !== 1) {
@@ -144,14 +151,21 @@ const UsersComponent = () => {
     }
   };
 
-  const getPlanColor = (plan) => {
-    switch (plan) {
-      case "Basic":
+  const getPlanColor = (plan, category) => {
+    // Color coding based on plan hierarchy within each category
+    const planIndex = plansByCategory[category]?.indexOf(plan) ?? -1;
+    
+    if (planIndex === -1) return "bg-gray-500 text-white";
+    
+    switch (planIndex) {
+      case 0: // First plan (Starter/Basic/Solo)
         return "bg-gray-500 text-white";
-      case "Premium":
+      case 1: // Second plan (Explorer/Plus/Team)
         return "bg-blue-500 text-white";
-      case "Enterprise":
+      case 2: // Third plan (Growth/Pro/Business)
         return "bg-purple-500 text-white";
+      case 3: // Fourth plan (Achiever/Elite/Enterprise)
+        return "bg-yellow-500 text-white";
       default:
         return "bg-gray-500 text-white";
     }
@@ -159,17 +173,15 @@ const UsersComponent = () => {
 
   const handleSaveUser = async (updatedUser) => {
     try {
-      // Call your update API here
+      // Call
       console.log("Saving user:", updatedUser);
       
-      // Refresh the users list after successful update
       await fetchUsers();
       
       setCurrentView("list");
       setSelectedUser(null);
     } catch (error) {
       console.error('Error saving user:', error);
-      // Handle error appropriately
     }
   };
 
@@ -306,9 +318,9 @@ const UsersComponent = () => {
               onChange={(e) => setSelectedPlan(e.target.value)}
               className="w-full bg-gray-700 bg-opacity-50 text-white border border-gray-600 rounded-lg px-4 py-2 focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent"
             >
-              {plans.map((plan) => (
+              {getAvailablePlans().map((plan) => (
                 <option key={plan} value={plan} className="bg-gray-700">
-                  {plan}
+                  {plan === "All Plans" ? plan : plan.charAt(0).toUpperCase() + plan.slice(1)}
                 </option>
               ))}
             </select>
@@ -398,10 +410,11 @@ const UsersComponent = () => {
                     <td className="px-6 py-4">
                       <span
                         className={`px-3 py-1 rounded-full text-xs font-medium ${getPlanColor(
-                          user.plan
+                          user.plan,
+                          user.category
                         )}`}
                       >
-                        {user.plan}
+                        {user.plan?.charAt(0).toUpperCase() + user.plan?.slice(1) || 'N/A'}
                       </span>
                     </td>
                     <td className="px-6 py-4">
