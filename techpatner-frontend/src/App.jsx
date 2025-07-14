@@ -1,18 +1,15 @@
-import { useState } from "react";
+import React, { useState } from "react";
 import "./App.css";
-import { BrowserRouter, Route, Routes, Navigate } from "react-router-dom"; // ✅ Add Navigate import
-
+import { BrowserRouter, Route, Routes, Navigate } from "react-router-dom";
 import AdminLoginPage from "./pages/AdminLogin";
-import Index from "./pages/Index"; // ✅ Make sure you import Index component
+import Index from "./pages/Index";
 import UsersPage from "./pages/User";
+import { authUtils } from "./utils/authUtils";
 
-const isAuthenticated = () => {
-  // Temporary hardcoded true
-  return true;
-};
+
 
 const ProtectedRoute = ({ element }) => {
-  return isAuthenticated() ? element : <Navigate to="/login" replace />;
+  return authUtils.isAuthenticated() ? element : <Navigate to="/login" replace />;
 };
 
 function App() {
@@ -21,10 +18,11 @@ function App() {
       <Routes>
         <Route path="/" element={<ProtectedRoute element={<Index />} />} />
         <Route path="/login" element={<AdminLoginPage />} />
-        <Route path="/user" element={<UsersPage />} />
+        <Route path="/user" element={<ProtectedRoute element={<UsersPage />} />} />
       </Routes>
     </BrowserRouter>
   );
 }
 
 export default App;
+export { authUtils };

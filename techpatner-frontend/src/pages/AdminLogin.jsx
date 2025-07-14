@@ -1,27 +1,81 @@
 import React, { useState } from "react";
-import { Eye, EyeOff, Shield, Mail, Lock } from "lucide-react";
+import { Eye, EyeOff, Shield, Mail, Lock, Loader2 } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 
 export default function AdminLoginPage() {
   const [showPassword, setShowPassword] = useState(false);
-  const [email, setEmail] = useState("admin@company.com");
+  const [email, setEmail] = useState("john.doe@example.com");
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
+  const [isLoading, setIsLoading] = useState(false);
   const navigate = useNavigate();
-  const handleSubmit = () => {
-    if(password!=="admin123") {
-      setError("Password is incorrect!")
-      return;
-    }
-    localStorage.setItem("password",password);
 
-    navigate("/");
-    console.log("Login attempt:", { email, password });
+  const API_BASE_URL =import.meta.env.VITE_API_URL
+
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    setError("");
+    setIsLoading(true);
+
+    try {
+      const response = await fetch(`${API_BASE_URL}/auth/login`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          email: email.trim(),
+          password: password,
+        }),
+      });
+
+      const data = await response.json();
+
+      if (response.ok && data.success) {
+        // Store authentication data
+        localStorage.setItem("authToken", data.data.token);
+        localStorage.setItem("userData", JSON.stringify(data.data.user));
+        
+        // Optional: Store for backwards compatibility
+        localStorage.setItem("password", password);
+        
+        console.log("Login successful:", data.data.user);
+        
+        // Navigate to dashboard
+        navigate("/");
+      } else {
+        // Handle API error response
+        setError(data.error || "Login failed. Please try again.");
+      }
+    } catch (error) {
+      console.error("Login error:", error);
+      
+      // Handle network errors
+      if (error.name === "TypeError" && error.message.includes("fetch")) {
+        setError("Unable to connect to server. Please check your connection.");
+      } else {
+        setError("An unexpected error occurred. Please try again.");
+      }
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   const fillDemoCredentials = () => {
-    setEmail("admin@company.com");
-    // setPassword("");
+    setEmail("john.doe@example.com");
+    setPassword("");
+    setError(""); // Clear any existing errors
+  };
+
+  // Handle input changes and clear errors
+  const handleEmailChange = (e) => {
+    setEmail(e.target.value);
+    if (error) setError("");
+  };
+
+  const handlePasswordChange = (e) => {
+    setPassword(e.target.value);
+    if (error) setError("");
   };
 
   return (
@@ -40,7 +94,7 @@ export default function AdminLoginPage() {
           </div>
 
           {/* Form */}
-          <div className="space-y-6">
+          <form onSubmit={handleSubmit} className="space-y-6">
             {/* Email Field */}
             <div>
               <label className="block text-white text-sm font-medium mb-2">
@@ -51,10 +105,11 @@ export default function AdminLoginPage() {
                 <input
                   type="email"
                   value={email}
-                  onChange={(e) => setEmail(e.target.value)}
+                  onChange={handleEmailChange}
                   className="w-full bg-gray-700 bg-opacity-50 text-white placeholder-gray-400 border border-gray-600 rounded-lg pl-10 pr-4 py-3 focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent transition-all duration-200"
-                  placeholder="admin@company.com"
+                  placeholder="john.doe@example.com"
                   required
+                  disabled={isLoading}
                 />
               </div>
             </div>
@@ -69,15 +124,17 @@ export default function AdminLoginPage() {
                 <input
                   type={showPassword ? "text" : "password"}
                   value={password}
-                  onChange={(e) => setPassword(e.target.value)}
+                  onChange={handlePasswordChange}
                   className="w-full bg-gray-700 bg-opacity-50 text-white placeholder-gray-400 border border-gray-600 rounded-lg pl-10 pr-12 py-3 focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent transition-all duration-200"
                   placeholder="Enter your password"
                   required
+                  disabled={isLoading}
                 />
                 <button
                   type="button"
                   onClick={() => setShowPassword(!showPassword)}
                   className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-gray-300 transition-colors"
+                  disabled={isLoading}
                 >
                   {showPassword ? (
                     <EyeOff className="w-5 h-5" />
@@ -85,17 +142,28 @@ export default function AdminLoginPage() {
                     <Eye className="w-5 h-5" />
                   )}
                 </button>
-               <span className="text-red-500">{error}</span>
               </div>
+              {error && (
+                <div className="mt-2 text-red-400 text-sm flex items-center">
+                  <span>{error}</span>
+                </div>
+              )}
             </div>
 
             {/* Sign In Button */}
             <button
-              type="button"
-              onClick={handleSubmit}
-              className="w-full bg-gradient-to-r from-purple-600 to-pink-600 text-white font-semibold py-3 px-6 rounded-lg hover:from-purple-700 hover:to-pink-700 focus:outline-none focus:ring-2 focus:ring-purple-500 focus:ring-offset-2 focus:ring-offset-gray-800 transition-all duration-200 transform hover:scale-[1.02] active:scale-[0.98]"
+              type="submit"
+              disabled={isLoading}
+              className="w-full bg-gradient-to-r from-purple-600 to-pink-600 text-white font-semibold py-3 px-6 rounded-lg hover:from-purple-700 hover:to-pink-700 focus:outline-none focus:ring-2 focus:ring-purple-500 focus:ring-offset-2 focus:ring-offset-gray-800 transition-all duration-200 transform hover:scale-[1.02] active:scale-[0.98] disabled:opacity-50 disabled:cursor-not-allowed disabled:transform-none"
             >
-              Sign In
+              {isLoading ? (
+                <div className="flex items-center justify-center">
+                  <Loader2 className="w-5 h-5 animate-spin mr-2" />
+                  Signing In...
+                </div>
+              ) : (
+                "Sign In"
+              )}
             </button>
 
             {/* Demo Credentials */}
@@ -103,17 +171,18 @@ export default function AdminLoginPage() {
               <button
                 type="button"
                 onClick={fillDemoCredentials}
-                className="w-full bg-gray-700 bg-opacity-50 text-gray-300 font-medium py-3 px-6 rounded-lg border border-gray-600 hover:bg-gray-600 hover:bg-opacity-50 focus:outline-none focus:ring-2 focus:ring-gray-500 transition-all duration-200"
+                disabled={isLoading}
+                className="w-full bg-gray-700 bg-opacity-50 text-gray-300 font-medium py-3 px-6 rounded-lg border border-gray-600 hover:bg-gray-600 hover:bg-opacity-50 focus:outline-none focus:ring-2 focus:ring-gray-500 transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
               >
                 <div className="text-center">
                   <div className="text-xs text-gray-400 mb-1">
                     Demo credentials:
                   </div>
-                  <div className="text-sm">admin@company.com / admin123</div>
+                  <div className="text-sm">john.doe@example.com / abc12300</div>
                 </div>
               </button>
             </div>
-          </div>
+          </form>
         </div>
       </div>
     </div>
